@@ -90,8 +90,20 @@ done
 #  with MultiLoaderDataSet or whatever I called it, to pretrain the model
 #  prior to the full run (TODO 2: this will need adapting to the OSI -> AMSR recipe)
 
-# 1. Copy dataset_config.monthly.cmip_osi_north.json, with referred loader configuration
-# 2. Strip out the split train dates from the loader configuration
-# 3. TEST with icenet_train
 unset PREFIX
 export PREFIX=$OLD_PREFIX
+source ENVS
+
+# 1. Copy dataset_config.monthly.cmip_osi_north.json, with referred loader configuration
+GROUND_TRUTH_DATASET="dataset_config.`basename $( pwd )`_${HEMI}.json"
+GROUND_TRUTH_LOADER=`jq -r '.loader_config' $GROUND_TRUTH_DATASET`
+PRETRAIN_DATASET="dataset_config.pretrain_eval.`basename $( pwd )`_${HEMI}.json"
+PRETRAIN_LOADER="loader.pretrain.${PREFIX,,}.${DATA_FREQUENCY}.${HEMI}.json"
+
+jq --arg loader `realpath $PRETRAIN_LOADER` '.loader_config=$loader | .counts.train = 0' $GROUND_TRUTH_DATASET > $PRETRAIN_DATASET
+
+# 2. Strip out the split train dates from ground truth loader configuration
+
+jq '.sources[].splits.train = [] | .sources[].source_files.train = []' $GROUND_TRUTH_LOADER > $PRETRAIN_LOADER
+
+# 3. TEST with icenet_train
