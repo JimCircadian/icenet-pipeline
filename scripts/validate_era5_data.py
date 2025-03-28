@@ -29,4 +29,6 @@ if __name__ == "__main__":
         year_files = set([pd.to_datetime(el).strftime("%Y.nc") for el in da.time.values])
 
         for ydf in year_files:
-            print(os.path.join(dir, ydf))
+            df = os.path.join(dir, ydf)
+            logging.warning("Removing {}".format(df))
+            os.unlink(df)
