@@ -23,12 +23,19 @@ if __name__ == "__main__":
         dfs = glob.glob("{}/*.nc".format(dir))
 
         logging.debug(dfs)
-        ds = xr.open_mfdataset(dfs)
-        da = getattr(ds, list(ds.data_vars)[0]).sum(["latitude", "longitude"]).compute()
-        da = da.where(da == 0., drop=True).squeeze().sortby(da.time)
-        year_files = set([pd.to_datetime(el).strftime("%Y.nc") for el in da.time.values])
+        dss = []
+        try:
+            dss.append(xr.open_mfdataset(dfs))
+        except ValueError:
+            for df in dfs:
+                dss.append(xr.open_dataset(df))
 
-        for ydf in year_files:
-            df = os.path.join(dir, ydf)
-            logging.warning("Removing {}".format(df))
-            os.unlink(df)
+        for ds in dss:
+            da = getattr(ds, list(ds.data_vars)[0]).sum(["latitude", "longitude"]).compute()
+            da = da.where(da == 0., drop=True).squeeze().sortby(da.time)
+            year_files = set([pd.to_datetime(el).strftime("%Y.nc") for el in da.time.values])
+
+            for ydf in year_files:
+                df = os.path.join(dir, ydf)
+                logging.warning("Removing {}".format(df))
+                os.unlink(df)
