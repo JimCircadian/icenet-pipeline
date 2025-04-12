@@ -89,10 +89,11 @@ DATASET_NAME=`basename $( pwd )`"_${HEMI}"
 
 icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
-FIRST_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train[0]' | tr -d '"'`}
+# For when we don't have the preceding data, make sure there's an offset. These will be dropped in generation
+LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$LAG']' | tr -d '"'`}
 mkdir -p plots
-icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json $FIRST_DATE ./plots/input.${HEMI}.${FIRST_DATE}.png
-icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json $FIRST_DATE ./plots/outputs.${HEMI}.${FIRST_DATE}.png
-icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json $FIRST_DATE ./plots/weights.${HEMI}.${FIRST_DATE}.png
+icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/input.${HEMI}.${LAG_DATE}.png
+icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/outputs.${HEMI}.${LAG_DATE}.png
+icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/weights.${HEMI}.${LAG_DATE}.png
 
 icenet_dataset_create -v -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME

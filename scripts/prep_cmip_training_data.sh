@@ -36,7 +36,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     # This updates our source
     if [ $DOWNLOAD -eq 1 ]; then
       echo "SOURCE: $SOURCE - MEMBER: $MEMBER"
-      COMMAND="download_cmip --config-path ${CMIP_DATA}.${CONFIG_SUFFIX} $DATA_ARGS --source $SOURCE --member $MEMBER $HEMI $CMIP6_DATES $CMIP6_VAR_ARGS"
+      COMMAND="download_cmip --config-path ${CMIP_DATA}.${CONFIG_SUFFIX} $DATA_ARGS --source $SOURCE --member $MEMBER $HEMI $CMIP6_DATES $CMIP6_VAR_ARGS $CMIP6_EXCLUDE_NODES"
       echo -e "\n\n$COMMAND\n\n"
       $COMMAND 2>&1 | tee logs/download.cmip_${HEMI}.${SOURCE}.${MEMBER}.log
     fi
@@ -49,8 +49,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
       preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX polarhole "icenet.data.masks.osisaf:Masks"
       preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX active_grid_cell "icenet.data.masks.osisaf:Masks"
     elif [ $SIC_TYPE == "amsr" ]; then
-      echo "AMSR not ready yet"
-      exit 1
+      preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.nsidc:Masks"
     fi
 
     REGRID_TRAIN_START=`date --date="$TRAIN_START - $LAG $DATA_FREQUENCY" +%F`
