@@ -35,7 +35,6 @@ OSISAF_PROC="proc.$OSISAF_ID"
 # download-toolbox integration
 # This updates our source
 if [ $DOWNLOAD -eq 1 ]; then
-  echo "SOURCE: $SOURCE - MEMBER: $MEMBER"
   pipeline_run download_osisaf --config-path ${OSISAF_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $OSISAF_DATES $OSISAF_VAR_ARGS
 fi
 
