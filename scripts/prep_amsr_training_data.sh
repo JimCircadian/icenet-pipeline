@@ -1,7 +1,7 @@
 #!/usr/bin/bash -l
 
 source ENVS
-source pipeline_cmds.sh
+source scripts/pipeline_cmds.sh
 conda activate $ICENET_CONDA
 
 set -o pipefail
@@ -30,7 +30,7 @@ if [ $DOWNLOAD -eq 1 ]; then
   pipeline_run download_era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
 fi 2>&1 | tee logs/download.amsr_training.log
 
-[ ! -f ref.amsr.${HEMI}.nc ] && pipeline_run ln -s $( realpath $( ls data/amsr2_6250/siconca/*/*${HEMI:0:1}6250-*-v5.4.nc | head -n 1 ) ) ref.amsr.${HEMI}.nc
+[ ! -f ref.amsr2.${HEMI}.nc ] && pipeline_run ln -s $( realpath $( ls data/amsr2_6250/siconca/*/*${HEMI:0:1}6250-*-v5.4.nc | head -n 1 ) ) ref.amsr2.${HEMI}.nc
 
 # Creates a new version of the dataset - processed_data/
 pipeline_run preprocess_missing_time \
@@ -44,7 +44,7 @@ REGRID_VAL_START=`date --date="$VAL_START - $LAG $DATA_FREQUENCY" +%F`
 REGRID_TEST_START=`date --date="$TEST_START - $LAG $DATA_FREQUENCY" +%F`
 pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
   -ps "train" -sn "train,val,test" -ss "$REGRID_TRAIN_START,$REGRID_VAL_START,$REGRID_TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
-  $ERA5_DATA.$CONFIG_SUFFIX ref.amsr.${HEMI}.nc $ERA5_PROC
+  $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
 
 ##
 # AMSR2 ground truth with ERA5
@@ -80,10 +80,19 @@ DATASET_NAME=`basename $( pwd )`"_${HEMI}"
 pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
 # For when we don't have the preceding data, make sure there's an offset. These will be dropped in generation
-LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$LAG']' | tr -d '"'`}
+if [ ! $DRY ]; then
+  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$LAG']' | tr -d '"'`}
+else
+  OFFSET=""
+  if [ $DATA_FREQUENCY == "month" ]; then
+    OFFSET=" - 1 day"
+  fi
+  LAG_DATE=`date --date="$TRAIN_START + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
+fi
 mkdir -p plots
-pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/input.${HEMI}.${LAG_DATE}.png
-pipeline_run icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/outputs.${HEMI}.${LAG_DATE}.png
-pipeline_run icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/weights.${HEMI}.${LAG_DATE}.png
+pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/amsr_input.${HEMI}.${LAG_DATE}.png
+pipeline_run icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/amsr_outputs.${HEMI}.${LAG_DATE}.png
+pipeline_run icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/amsr_weights.${HEMI}.${LAG_DATE}.png
 
-#icenet_dataset_create -v -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
+echo "To cache the dataset, please run:"
+echo icenet_dataset_create -v -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME

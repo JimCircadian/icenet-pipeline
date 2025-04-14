@@ -19,9 +19,9 @@ if __name__ == "__main__":
             var_dirs.append(os.path.join(src_dirs, hemi))
 
     for dir in var_dirs:
-        logging.info("Directory: {}".format(dir))
         dfs = glob.glob("{}/*.nc".format(dir))
 
+        logging.info("Directory: {} - {} files".format(dir, len(dfs)))
         logging.debug(dfs)
         dss = []
         try:
