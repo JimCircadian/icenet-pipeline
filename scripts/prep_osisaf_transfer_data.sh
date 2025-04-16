@@ -51,8 +51,8 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFF
 pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX polarhole "icenet.data.masks.osisaf:Masks"
 pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX active_grid_cell "icenet.data.masks.osisaf:Masks"
 
-# TODO: temporal interpolation limiting
 pipeline_run preprocess_missing_time \
+  -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
   -c ./interp.osisaf.${CONFIG_SUFFIX} \
   -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
@@ -109,7 +109,7 @@ else
   if [ $DATA_FREQUENCY == "month" ]; then
     OFFSET=" - 1 day"
   fi
-  LAG_DATE=`date --date="$TRAIN_START + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
+  LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
 fi
 mkdir -p plots
 pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/input.pretrain.${HEMI}.${LAG_DATE}.png

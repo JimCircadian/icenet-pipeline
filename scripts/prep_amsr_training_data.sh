@@ -87,7 +87,7 @@ else
   if [ $DATA_FREQUENCY == "month" ]; then
     OFFSET=" - 1 day"
   fi
-  LAG_DATE=`date --date="$TRAIN_START + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
+  LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
 fi
 mkdir -p plots
 pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/amsr_input.${HEMI}.${LAG_DATE}.png

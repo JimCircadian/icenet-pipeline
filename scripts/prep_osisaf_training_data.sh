@@ -44,13 +44,13 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFF
 
 # We CAN supply splits and lead / lag to prevent unnecessarily large copies of datasets
 # or interpolation of time across huge spans
-# TODO: temporal interpolation limiting
 pipeline_run preprocess_missing_time \
+  -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
   -c ./interp.osisaf.$CONFIG_SUFFIX \
   -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
 pipeline_run preprocess_missing_spatial \
-  -m processed.masks.$OSISAF.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
+  -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
   -n siconca -v interp.osisaf.$CONFIG_SUFFIX
 
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
@@ -99,7 +99,7 @@ else
   if [ $DATA_FREQUENCY == "month" ]; then
     OFFSET=" - 1 day"
   fi
-  LAG_DATE=`date --date="$TRAIN_START + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
+  LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
 fi
 mkdir -p plots
 pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/osisaf_input.${HEMI}.${LAG_DATE}.png
