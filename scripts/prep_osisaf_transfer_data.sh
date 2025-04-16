@@ -21,6 +21,8 @@ DRY=${3:-0}
 
 CONFIG_SUFFIX="${DATA_FREQUENCY}.${HEMI}.json"
 SIC_TRUTH_DATA="data.$SIC_TYPE"
+HEMI_SHORT="nh"
+[ $HEMI == "south" ] && HEMI_SHORT="sh"
 
 if [ ! -f ${SIC_TRUTH_DATA}.${CONFIG_SUFFIX} ]; then
   echo "This needs to be run AFTER you've prepared your main run data!"
@@ -46,11 +48,12 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_S
 REGRID_TRAIN_START=`date --date="$TRAIN_START - $LAG $DATA_FREQUENCY" +%F`
 pipeline_run preprocess_regrid -v -c ./regrid.$OSISAF_DATA.$CONFIG_SUFFIX \
   -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+  -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
+  -ca `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1` \
   $OSISAF_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $OSISAF_PROC
 
-pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \
+pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
   -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
-  -i "icenet.data.processors.osisaf:SICPreProcessor" \
   -sh $LAG -st $FORECAST_LENGTH \
   regrid.$OSISAF_DATA.$CONFIG_SUFFIX ${PROCESSED_DATASET}_${OSISAF_DATA}
 
