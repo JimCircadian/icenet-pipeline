@@ -19,52 +19,86 @@ SIC_TYPE="amsr2"
 DOWNLOAD=${2:-0}
 DRY=${3:-0}
 
-CONFIG_SUFFIX="${DATA_FREQUENCY}.${HEMI}.json"
+PROCESSED_DATASET="pretrain.${DATA_FREQUENCY}.${HEMI}"
+CONFIG_SUFFIX="${PROCESSED_DATASET}.json"
 SIC_TRUTH_DATA="data.$SIC_TYPE"
 HEMI_SHORT="nh"
 [ $HEMI == "south" ] && HEMI_SHORT="sh"
 
-if [ ! -f ${SIC_TRUTH_DATA}.${CONFIG_SUFFIX} ]; then
-  echo "This needs to be run AFTER you've prepared your main run data!"
+if [ ! -f ${SIC_TRUTH_DATA}.${DATA_FREQUENCY}.${HEMI}.json ]; then
+  echo "${SIC_TRUTH_DATA}.${DATA_FREQUENCY}.${HEMI}.json missing: this needs to be run AFTER you've prepared your main run data!"
   exit 1
 fi
 
 echo -e "\n=============================================\n"
-OSISAF_ID="osisaf"
-OSISAF_DATA="data.$OSISAF_ID"
-OSISAF_PROC="proc.$OSISAF_ID"
+OSISAF_DATA="data.osisaf"
+OSISAF_PROC="proc.osisaf"
+ERA5_DATA="data.era5"
+ERA5_PROC="proc.era5"
 
 # download-toolbox integration
 # This updates our source
 if [ $DOWNLOAD -eq 1 ]; then
   pipeline_run download_osisaf --config-path ${OSISAF_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $OSISAF_DATES $OSISAF_VAR_ARGS
+  pipeline_run download_era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
 fi
 
-PROCESSED_DATASET="pretrain.${OSISAF_ID}.${DATA_FREQUENCY}.${HEMI}"
 pipeline_run preprocess_loader_init -v $PROCESSED_DATASET
 
-pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.nsidc:Masks"
+# TODO: do we use NSIDC or OSISAF masks? defaulting to OSISAF as it covers product gaps
+#   pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.nsidc:Masks"
+pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX land "icenet.data.masks.osisaf:Masks"
+pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX polarhole "icenet.data.masks.osisaf:Masks"
+pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX active_grid_cell "icenet.data.masks.osisaf:Masks"
+
+# TODO: temporal interpolation limiting
+pipeline_run preprocess_missing_time \
+  -c ./interp.osisaf.${CONFIG_SUFFIX} \
+  -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
+
+# FIXME: masks are not working for transfer learning
+pipeline_run preprocess_missing_spatial \
+  -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
+  -n siconca -v interp.osisaf.${CONFIG_SUFFIX}
 
 REGRID_TRAIN_START=`date --date="$TRAIN_START - $LAG $DATA_FREQUENCY" +%F`
-pipeline_run preprocess_regrid -v -c ./regrid.$OSISAF_DATA.$CONFIG_SUFFIX \
+pipeline_run preprocess_regrid -v -c ./regrid.osisaf.${CONFIG_SUFFIX} \
   -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
   -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
   -ca `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1` \
-  $OSISAF_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $OSISAF_PROC
+  interp.osisaf.${CONFIG_SUFFIX} ref.${SIC_TYPE}.${HEMI}.nc ${PROCESSED_DATASET}_osisaf
 
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
   -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
+  -i "icenet.data.processors.osisaf:SICPreProcessor" \
   -sh $LAG -st $FORECAST_LENGTH \
-  regrid.$OSISAF_DATA.$CONFIG_SUFFIX ${PROCESSED_DATASET}_${OSISAF_DATA}
+  regrid.osisaf.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_osisaf
 
-pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_${OSISAF_DATA}.json
+# TODO: For OSISAF we are rotating the SIC dataset on it's axis, see GH#34
+pipeline_run preprocess_regrid -v -c ./regrid.era5.${CONFIG_SUFFIX} \
+  -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+  $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
+#HEMI_SHORT="nh"
+#[ $HEMI == "south" ] && HEMI_SHORT="sh"
+#pipeline_run icenet_generate_ref_osisaf -v `data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | tail -n 1`
+#pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.${CONFIG_SUFFIX} ref.amsr2.${HEMI}.nc
 
-pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${OSISAF_DATA}.${CONFIG_SUFFIX} sin "icenet.data.meta:SinProcessor"
-pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${OSISAF_DATA}.${CONFIG_SUFFIX} cos "icenet.data.meta:CosProcessor"
-pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${OSISAF_DATA}.${CONFIG_SUFFIX} land_map "icenet.data.masks.nsidc:Masks"
+pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
+  -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
+  -i "icenet.data.processors.cds:ERA5PreProcessor" \
+  -sh $LAG -st $FORECAST_LENGTH \
+  regrid.era5.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_era5
+
+pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_osisaf.json processed.${PROCESSED_DATASET}_era5.json
+
+pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.osisaf.${CONFIG_SUFFIX} sin "icenet.data.meta:SinProcessor"
+pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.osisaf.${CONFIG_SUFFIX} cos "icenet.data.meta:CosProcessor"
+pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.osisaf.${CONFIG_SUFFIX} land_map "icenet.data.masks.osisaf:Masks"
+
+pipeline_run icenet_regrid_osisaf_masks -v ref.amsr2.${HEMI}.nc processed/masks.osisaf.${HEMI} `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1`
 
 LOADER_CONFIGURATION="loader.${PROCESSED_DATASET}.json"
-DATASET_NAME=`basename $( pwd )`"_pretrain.${OSISAF_ID}.${HEMI}"
+DATASET_NAME=`basename $( pwd )`"_pretrain.${HEMI}"
 
 pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
@@ -78,9 +112,9 @@ else
   LAG_DATE=`date --date="$TRAIN_START + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
 fi
 mkdir -p plots
-pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/input.${OSISAF_ID}.${HEMI}.${LAG_DATE}.png
-pipeline_run icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/outputs.${OSISAF_ID}.${HEMI}.${LAG_DATE}.png
-pipeline_run icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/weights.${OSISAF_ID}.${HEMI}.${LAG_DATE}.png
+pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/input.pretrain.${HEMI}.${LAG_DATE}.png
+pipeline_run icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/outputs.pretrain.${HEMI}.${LAG_DATE}.png
+pipeline_run icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json $LAG_DATE ./plots/weights.pretrain.${HEMI}.${LAG_DATE}.png
 
 echo "To cache the dataset, please run:"
 echo icenet_dataset_create -v -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME

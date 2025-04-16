@@ -50,7 +50,7 @@ pipeline_run preprocess_missing_time \
   -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
 pipeline_run preprocess_missing_spatial \
-  -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
+  -m processed.masks.$OSISAF.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
   -n siconca -v interp.osisaf.$CONFIG_SUFFIX
 
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
