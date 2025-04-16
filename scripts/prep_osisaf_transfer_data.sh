@@ -61,7 +61,7 @@ pipeline_run preprocess_missing_spatial \
   -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
   -n siconca -v interp.osisaf.${CONFIG_SUFFIX}
 
-REGRID_TRAIN_START=`date --date="$TRAIN_START - $LAG $DATA_FREQUENCY" +%F`
+REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
 pipeline_run preprocess_regrid -v -c ./regrid.osisaf.${CONFIG_SUFFIX} \
   -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
   -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
