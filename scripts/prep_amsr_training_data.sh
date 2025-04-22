@@ -33,16 +33,18 @@ fi 2>&1 | tee logs/download.amsr_training.log
 [ ! -f ref.amsr2.${HEMI}.nc ] && pipeline_run ln -s $( realpath $( ls data/amsr2_6250/siconca/*/*${HEMI:0:1}6250-*-v5.4.nc | head -n 1 ) ) ref.amsr2.${HEMI}.nc
 
 # Creates a new version of the dataset - processed_data/
-pipeline_run preprocess_missing_time \
-  -c ./interp.amsr2.$CONFIG_SUFFIX \
-  -n siconca -v $AMSR2_DATA.$CONFIG_SUFFIX $AMSR2_PROC
+if [ ! -f interp.amsr2.$CONFIG_SUFFIX ]; then
+  pipeline_run preprocess_missing_time \
+    -c ./interp.amsr2.$CONFIG_SUFFIX \
+    -n siconca -v $AMSR2_DATA.$CONFIG_SUFFIX $AMSR2_PROC
+fi
 
 # Creates a new version of the dataset - processed_data/ so include any lag
 # The resulting configuration doesn't care about splits, so it won't carry forward
 REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
 REGRID_VAL_START=`date --date="$( echo $VAL_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
 REGRID_TEST_START=`date --date="$( echo $TEST_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
-pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
+[ ! -f regrid.era5.$CONFIG_SUFFIX ] && pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
   -ps "train" -sn "train,val,test" -ss "$REGRID_TRAIN_START,$REGRID_VAL_START,$REGRID_TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
   $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
 

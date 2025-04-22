@@ -54,15 +54,17 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     fi
 
     REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
-    pipeline_run preprocess_regrid -v -c ./regrid.$CMIP_DATA.$CONFIG_SUFFIX \
-      -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
-      $CMIP_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $CMIP_PROC
+    if [ ! -f regrid.$CMIP_DATA.$CONFIG_SUFFIX ]; then
+      pipeline_run preprocess_regrid -v -c ./regrid.$CMIP_DATA.$CONFIG_SUFFIX \
+        -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+        $CMIP_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $CMIP_PROC
 
-    pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \
-      -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
-      -i "icenet.data.processors.cmip:CMIP6PreProcessor" \
-      -sh $LAG -st $FORECAST_LENGTH \
-      regrid.$CMIP_DATA.$CONFIG_SUFFIX ${PROCESSED_DATASET}_${CMIP_DATA}
+      pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \
+        -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
+        -i "icenet.data.processors.cmip:CMIP6PreProcessor" \
+        -sh $LAG -st $FORECAST_LENGTH \
+        regrid.$CMIP_DATA.$CONFIG_SUFFIX ${PROCESSED_DATASET}_${CMIP_DATA}
+    fi
 
     pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_${CMIP_DATA}.json
 

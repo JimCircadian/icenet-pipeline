@@ -44,14 +44,16 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFF
 
 # We CAN supply splits and lead / lag to prevent unnecessarily large copies of datasets
 # or interpolation of time across huge spans
-pipeline_run preprocess_missing_time \
-  -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
-  -c ./interp.osisaf.$CONFIG_SUFFIX \
-  -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
+if [ ! -f interp.osisaf.$CONFIG_SUFFIX ]; then
+  pipeline_run preprocess_missing_time \
+    -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -c ./interp.osisaf.$CONFIG_SUFFIX \
+    -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
-pipeline_run preprocess_missing_spatial \
-  -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
-  -n siconca -v interp.osisaf.$CONFIG_SUFFIX
+  pipeline_run preprocess_missing_spatial \
+    -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
+    -n siconca -v interp.osisaf.$CONFIG_SUFFIX
+fi
 
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
   -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \

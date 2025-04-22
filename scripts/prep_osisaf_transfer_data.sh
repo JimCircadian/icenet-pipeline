@@ -51,22 +51,27 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFF
 pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX polarhole "icenet.data.masks.osisaf:Masks"
 pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFFIX active_grid_cell "icenet.data.masks.osisaf:Masks"
 
-pipeline_run preprocess_missing_time \
-  -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
-  -c ./interp.osisaf.${CONFIG_SUFFIX} \
-  -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
+if [ ! -f interp.osisaf.${CONFIG_SUFFIX} ]; then
+  pipeline_run preprocess_missing_time \
+    -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -c ./interp.osisaf.${CONFIG_SUFFIX} \
+    -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
-# FIXME: masks are not working for transfer learning
-pipeline_run preprocess_missing_spatial \
-  -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
-  -n siconca -v interp.osisaf.${CONFIG_SUFFIX}
+  # FIXME: masks are not working for transfer learning
+  pipeline_run preprocess_missing_spatial \
+    -m processed.masks.osisaf.${HEMI}.json -mp land,inactive_grid_cell,polarhole \
+    -n siconca -v interp.osisaf.${CONFIG_SUFFIX}
+fi
 
 REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
-pipeline_run preprocess_regrid -v -c ./regrid.osisaf.${CONFIG_SUFFIX} \
-  -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
-  -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
-  -ca `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1` \
-  interp.osisaf.${CONFIG_SUFFIX} ref.${SIC_TYPE}.${HEMI}.nc ${PROCESSED_DATASET}_osisaf
+
+if [ ! -f regrid.osisaf.${CONFIG_SUFFIX} ]; then
+  pipeline_run preprocess_regrid -v -c ./regrid.osisaf.${CONFIG_SUFFIX} \
+    -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+    -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
+    -ca `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1` \
+    interp.osisaf.${CONFIG_SUFFIX} ref.${SIC_TYPE}.${HEMI}.nc ${PROCESSED_DATASET}_osisaf
+fi
 
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
   -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
@@ -74,14 +79,16 @@ pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
   -sh $LAG -st $FORECAST_LENGTH \
   regrid.osisaf.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_osisaf
 
-# TODO: For OSISAF we are rotating the SIC dataset on it's axis, see GH#34
-pipeline_run preprocess_regrid -v -c ./regrid.era5.${CONFIG_SUFFIX} \
-  -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
-  $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
-#HEMI_SHORT="nh"
-#[ $HEMI == "south" ] && HEMI_SHORT="sh"
-#pipeline_run icenet_generate_ref_osisaf -v `data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | tail -n 1`
-#pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.${CONFIG_SUFFIX} ref.amsr2.${HEMI}.nc
+if [ ! -f regrid.era5.${CONFIG_SUFFIX} ]; then
+  # TODO: For OSISAF we are rotating the SIC dataset on it's axis, see GH#34
+  pipeline_run preprocess_regrid -v -c ./regrid.era5.${CONFIG_SUFFIX} \
+    -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+    $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
+  #HEMI_SHORT="nh"
+  #[ $HEMI == "south" ] && HEMI_SHORT="sh"
+  #pipeline_run icenet_generate_ref_osisaf -v `data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | tail -n 1`
+  #pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.${CONFIG_SUFFIX} ref.amsr2.${HEMI}.nc
+fi
 
 pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
   -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
