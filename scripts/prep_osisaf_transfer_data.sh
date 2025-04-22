@@ -63,11 +63,14 @@ if [ ! -f interp.osisaf.${CONFIG_SUFFIX} ]; then
     -n siconca -v interp.osisaf.${CONFIG_SUFFIX}
 fi
 
-REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
+FIRST_TRAIN_DATE=$( echo $TRAIN_START | awk -F'|' '{ print $1 }' )
+REGRID_TRAIN_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
 
 if [ ! -f regrid.osisaf.${CONFIG_SUFFIX} ]; then
   pipeline_run preprocess_regrid -v -c ./regrid.osisaf.${CONFIG_SUFFIX} \
-    -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+    -ps "train" -sn "train" \
+    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}}" \
+    -se "$TRAIN_END" \
     -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
     -ca `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1` \
     interp.osisaf.${CONFIG_SUFFIX} ref.${SIC_TYPE}.${HEMI}.nc ${PROCESSED_DATASET}_osisaf
@@ -82,7 +85,9 @@ pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
 if [ ! -f regrid.era5.${CONFIG_SUFFIX} ]; then
   # TODO: For OSISAF we are rotating the SIC dataset on it's axis, see GH#34
   pipeline_run preprocess_regrid -v -c ./regrid.era5.${CONFIG_SUFFIX} \
-    -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+    -ps "train" -sn "train" \
+    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}}" \
+    -se "$TRAIN_END" \
     $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
   #HEMI_SHORT="nh"
   #[ $HEMI == "south" ] && HEMI_SHORT="sh"

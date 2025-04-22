@@ -53,10 +53,14 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
       pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.nsidc:Masks"
     fi
 
-    REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
     if [ ! -f regrid.$CMIP_DATA.$CONFIG_SUFFIX ]; then
+      FIRST_TRAIN_DATE=$( echo $TRAIN_START | awk -F'|' '{ print $1 }' )
+      REGRID_TRAIN_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
+
       pipeline_run preprocess_regrid -v -c ./regrid.$CMIP_DATA.$CONFIG_SUFFIX \
-        -ps "train" -sn "train" -ss "$REGRID_TRAIN_START" -se "$TRAIN_END" \
+        -ps "train" -sn "train" \
+        -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}}" \
+        -se "$TRAIN_END" \
         $CMIP_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $CMIP_PROC
 
       pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \

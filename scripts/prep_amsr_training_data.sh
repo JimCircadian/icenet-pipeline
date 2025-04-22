@@ -41,12 +41,19 @@ fi
 
 # Creates a new version of the dataset - processed_data/ so include any lag
 # The resulting configuration doesn't care about splits, so it won't carry forward
-REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
-REGRID_VAL_START=`date --date="$( echo $VAL_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
-REGRID_TEST_START=`date --date="$( echo $TEST_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
 if [ ! -f regrid.era5.$CONFIG_SUFFIX ]; then
+  FIRST_TRAIN_DATE=$( echo $TRAIN_START | awk -F'|' '{ print $1 }' )
+  FIRST_VAL_DATE=$( echo $VAL_START | awk -F'|' '{ print $1 }' )
+  FIRST_TEST_DATE=$( echo $TEST_START | awk -F'|' '{ print $1 }' )
+  REGRID_TRAIN_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
+  REGRID_VAL_START=`date --date="$FIRST_VAL_DATE - $LAG $DATA_FREQUENCY" +%F`
+  REGRID_TEST_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
+
   pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
-    -ps "train" -sn "train,val,test" -ss "$REGRID_TRAIN_START,$REGRID_VAL_START,$REGRID_TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -ps "train" -sn "train,val,test" \
+    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}},${REGRID_VAL_START}" \
+    "${VAL_START:${#FIRST_VAL_DATE}},${REGRID_TEST_START}${TEST_START:${#FIRST_TEST_START}}" \
+    -se "$TRAIN_END,$VAL_END,$TEST_END" \
     $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
 fi
 
