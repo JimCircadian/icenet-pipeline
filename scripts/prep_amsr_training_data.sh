@@ -44,9 +44,11 @@ fi
 REGRID_TRAIN_START=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
 REGRID_VAL_START=`date --date="$( echo $VAL_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
 REGRID_TEST_START=`date --date="$( echo $TEST_START | awk -F'|' '{ print $1 }' ) - $LAG $DATA_FREQUENCY" +%F`
-[ ! -f regrid.era5.$CONFIG_SUFFIX ] && pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
-  -ps "train" -sn "train,val,test" -ss "$REGRID_TRAIN_START,$REGRID_VAL_START,$REGRID_TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
-  $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
+if [ ! -f regrid.era5.$CONFIG_SUFFIX ]; then
+  pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
+    -ps "train" -sn "train,val,test" -ss "$REGRID_TRAIN_START,$REGRID_VAL_START,$REGRID_TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
+fi
 
 ##
 # AMSR2 ground truth with ERA5
