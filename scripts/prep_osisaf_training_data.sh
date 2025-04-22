@@ -79,8 +79,7 @@ if [ ! -f regrid.era5.$CONFIG_SUFFIX ]; then
 
   pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
     -ps "train" -sn "train,val,test" \
-    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}},${REGRID_VAL_START}" \
-    "${VAL_START:${#FIRST_VAL_DATE}},${REGRID_TEST_START}${TEST_START:${#FIRST_TEST_DATE}}" \
+    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}},${REGRID_VAL_START}${VAL_START:${#FIRST_VAL_DATE}},${REGRID_TEST_START}${TEST_START:${#FIRST_TEST_DATE}}" \
     -se "$TRAIN_END,$VAL_END,$TEST_END" \
     $ERA5_DATA.$CONFIG_SUFFIX ref.osisaf.${HEMI}.nc $ERA5_PROC
   pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.$CONFIG_SUFFIX ref.osisaf.${HEMI}.nc
