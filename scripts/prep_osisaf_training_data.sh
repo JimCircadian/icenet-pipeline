@@ -75,7 +75,7 @@ if [ ! -f regrid.era5.$CONFIG_SUFFIX ]; then
   FIRST_TEST_DATE=$( echo $TEST_START | awk -F'|' '{ print $1 }' )
   REGRID_TRAIN_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
   REGRID_VAL_START=`date --date="$FIRST_VAL_DATE - $LAG $DATA_FREQUENCY" +%F`
-  REGRID_TEST_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
+  REGRID_TEST_START=`date --date="$FIRST_TEST_DATE - $LAG $DATA_FREQUENCY" +%F`
 
   pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
     -ps "train" -sn "train,val,test" \
