@@ -104,5 +104,5 @@ pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_D
 pipeline_run icenet_plot_input --outputs -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/amsr_outputs.${HEMI}.${LAG_DATE}.png
 pipeline_run icenet_plot_input --weights -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/amsr_weights.${HEMI}.${LAG_DATE}.png
 
-echo "To cache the dataset, please run:"
-pipeline_run icenet_dataset_create -v -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
+echo -n "To CACHE the dataset, please run: "
+echo icenet_dataset_create -v -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
