@@ -91,7 +91,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     else
       OFFSET=""
       if [ $DATA_FREQUENCY == "month" ]; then
-        OFFSET=" - 1 day"
+        OFFSET=" + 1 month - 1 day"
       fi
       LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
     fi

@@ -91,11 +91,12 @@ pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FOR
 
 # For when we don't have the preceding data, make sure there's an offset. These will be dropped in generation
 if [ ! $DRY ]; then
-  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$LAG']' | tr -d '"'`}
+  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$( expr $LAG + 1 )']' | tr -d '"'`}
 else
   OFFSET=""
   if [ $DATA_FREQUENCY == "month" ]; then
-    OFFSET=" - 1 day"
+    # This ensures we're providing the end day of the month
+    OFFSET=" + 1 month - 1 day"
   fi
   LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
 fi
