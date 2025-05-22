@@ -53,7 +53,9 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFF
 
 if [ ! -f interp.osisaf.${CONFIG_SUFFIX} ]; then
   pipeline_run preprocess_missing_time \
-    -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -ps "train" -sn "train" \
+    -ss "$TRAIN_START" -se "$TRAIN_END" \
+    -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
     -c ./interp.osisaf.${CONFIG_SUFFIX} \
     -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
@@ -63,14 +65,8 @@ if [ ! -f interp.osisaf.${CONFIG_SUFFIX} ]; then
     -n siconca -v interp.osisaf.${CONFIG_SUFFIX}
 fi
 
-FIRST_TRAIN_DATE=$( echo $TRAIN_START | awk -F'|' '{ print $1 }' )
-REGRID_TRAIN_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
-
 if [ ! -f regrid.osisaf.${CONFIG_SUFFIX} ]; then
   pipeline_run preprocess_regrid -v -c ./regrid.osisaf.${CONFIG_SUFFIX} \
-    -ps "train" -sn "train" \
-    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}}" \
-    -se "$TRAIN_END" \
     -cp "icenet.data.processors.osisaf:amsr_coordinate_regrid" \
     -ca `ls data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | head -n 1` \
     interp.osisaf.${CONFIG_SUFFIX} ref.${SIC_TYPE}.${HEMI}.nc ${PROCESSED_DATASET}_osisaf
@@ -86,8 +82,8 @@ if [ ! -f regrid.era5.${CONFIG_SUFFIX} ]; then
   # TODO: For OSISAF we are rotating the SIC dataset on it's axis, see GH#34
   pipeline_run preprocess_regrid -v -c ./regrid.era5.${CONFIG_SUFFIX} \
     -ps "train" -sn "train" \
-    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}}" \
-    -se "$TRAIN_END" \
+    -ss "$TRAIN_START" -se "$TRAIN_END" \
+    -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
     $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
   #HEMI_SHORT="nh"
   #[ $HEMI == "south" ] && HEMI_SHORT="sh"
@@ -98,7 +94,7 @@ fi
 pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
   -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
   -i "icenet.data.processors.cds:ERA5PreProcessor" \
-  -sh $LAG -st $FORECAST_LENGTH \
+  -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
   regrid.era5.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_era5
 
 pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_osisaf.json processed.${PROCESSED_DATASET}_era5.json
@@ -144,7 +140,11 @@ if [ ! ${DRY:+1} ] || [ $DRY -eq 0 ]; then
 
   # 1. Copy dataset_config.monthly.cmip_osi_north.json, with referred loader configuration
   GROUND_TRUTH_DATASET="dataset_config.`basename $( pwd )`_${HEMI}.json"
-  GROUND_TRUTH_LOADER=`jq -r '.loader_config' $GROUND_TRUTH_DATASET`
+  # We can copy it from the monthly.amsr runs, so check
+  if [ ! -f $GROUND_TRUTH_DATASET ]; then
+    GROUND_TRUTH_DATASET="dataset_config.monthly.amsr_${HEMI}.json"
+  fi
+  GROUND_TRUTH_LOADER=`pwd .`/$( basename `jq -r '.loader_config' $GROUND_TRUTH_DATASET` )
   PRETRAIN_DATASET="dataset_config.pretrain_eval.`basename $( pwd )`_${HEMI}.json"
   PRETRAIN_LOADER="loader.pretrain.${PREFIX,,}.${DATA_FREQUENCY}.${HEMI}.json"
 
