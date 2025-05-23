@@ -39,7 +39,9 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     # This updates our source
     if [ $DOWNLOAD -eq 1 ]; then
       echo "SOURCE: $SOURCE - MEMBER: $MEMBER"
-      pipeline_run download_cmip --config-path ${CMIP_DATA}.${CONFIG_SUFFIX} $DATA_ARGS --source $SOURCE --member $MEMBER $HEMI $CMIP6_DATES $CMIP6_VAR_ARGS $CMIP6_EXCLUDE_NODES 2>&1 | tee logs/download.cmip_${HEMI}.${SOURCE}.${MEMBER}.log
+      if [ ! -f ${CMIP_DATA}.${CONFIG_SUFFIX} ]; then
+        pipeline_run download_cmip --config-path ${CMIP_DATA}.${CONFIG_SUFFIX} $DATA_ARGS --source $SOURCE --member $MEMBER $HEMI $CMIP6_DATES $CMIP6_VAR_ARGS $CMIP6_EXCLUDE_NODES 2>&1 | tee logs/download.cmip_${HEMI}.${SOURCE}.${MEMBER}.log
+      fi
     fi
 
     PROCESSED_DATASET="pretrain.${CMIP_ID}.${DATA_FREQUENCY}.${HEMI}"
