@@ -72,11 +72,13 @@ if [ ! -f regrid.osisaf.${CONFIG_SUFFIX} ]; then
     interp.osisaf.${CONFIG_SUFFIX} ref.${SIC_TYPE}.${HEMI}.nc ${PROCESSED_DATASET}_osisaf
 fi
 
-pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
-  -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
-  -i "icenet.data.processors.osisaf:SICPreProcessor" \
-  -sh $LAG -st $FORECAST_LENGTH \
-  regrid.osisaf.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_osisaf
+if [ ! -f processed.${PROCESSED_DATASET}_osisaf.json ]; then
+  pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
+    -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
+    -i "icenet.data.processors.osisaf:SICPreProcessor" \
+    -sh $LAG -st $FORECAST_LENGTH \
+    regrid.osisaf.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_osisaf
+fi
 
 if [ ! -f regrid.era5.${CONFIG_SUFFIX} ]; then
   # TODO: For OSISAF we are rotating the SIC dataset on it's axis, see GH#34
@@ -91,11 +93,13 @@ if [ ! -f regrid.era5.${CONFIG_SUFFIX} ]; then
   #pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.${CONFIG_SUFFIX} ref.amsr2.${HEMI}.nc
 fi
 
-pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
-  -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
-  -i "icenet.data.processors.cds:ERA5PreProcessor" \
-  -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
-  regrid.era5.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_era5
+if [ ! -f processed.${PROCESSED_DATASET}_era5.json ]; then
+  pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
+    -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
+    -i "icenet.data.processors.cds:ERA5PreProcessor" \
+    -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
+    regrid.era5.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_era5
+fi
 
 pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_osisaf.json processed.${PROCESSED_DATASET}_era5.json
 

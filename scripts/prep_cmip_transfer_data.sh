@@ -61,7 +61,9 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
         -ss "$TRAIN_START" -se "$TRAIN_END" \
         -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
         $CMIP_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $CMIP_PROC
+    fi
 
+    if [ ! -f processed.${PROCESSED_DATASET}_${CMIP_DATA}.json ]; then
       pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \
         -ps "train" -sn "train" \
         -ss "$TRAIN_START" -se "$TRAIN_END" \
