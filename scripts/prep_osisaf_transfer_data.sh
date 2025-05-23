@@ -9,7 +9,7 @@ conda activate $ICENET_CONDA
 set -o pipefail
 set -eu
 
-if [ $# -lt 2 ] || [ "$1" == "-h" ]; then
+if [ $# -lt 1 ] || [ "$1" == "-h" ]; then
     echo "Usage $0 <hemisphere> [download=0|1] [dry=0|1]"
     exit 1
 fi
