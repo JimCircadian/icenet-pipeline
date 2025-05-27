@@ -30,21 +30,26 @@ fi
 
 for SOURCE in ${!CMIP6_SOURCES[@]}; do
   for MEMBER in ${CMIP6_SOURCES[$SOURCE]}; do
-    echo -e "\n=============================================\n"
     CMIP_ID="cmip_${SIC_TYPE}.${SOURCE}.${MEMBER}"
     CMIP_DATA="data.$CMIP_ID"
     CMIP_PROC="proc.$CMIP_ID"
+    PROCESSED_DATASET="pretrain.${CMIP_ID}.${DATA_FREQUENCY}.${HEMI}"
+    LOADER_CONFIGURATION="loader.${PROCESSED_DATASET}.json"
+    DATASET_NAME=`basename $( pwd )`"_pretrain.${CMIP_ID}.${HEMI}"
+
+    [ -f $LOADER_CONFIGURATION ] && continue
+    echo -e "\n=============================================\n"
 
     # download-toolbox integration
     # This updates our source
     if [ $DOWNLOAD -eq 1 ]; then
       echo "SOURCE: $SOURCE - MEMBER: $MEMBER"
       if [ ! -f ${CMIP_DATA}.${CONFIG_SUFFIX} ]; then
-        pipeline_run download_cmip --config-path ${CMIP_DATA}.${CONFIG_SUFFIX} $DATA_ARGS --source $SOURCE --member $MEMBER $HEMI $CMIP6_DATES $CMIP6_VAR_ARGS $CMIP6_EXCLUDE_NODES 2>&1 | tee logs/download.cmip_${HEMI}.${SOURCE}.${MEMBER}.log
+        pipeline_run download_cmip --config-path ${CMIP_DATA}.${CONFIG_SUFFIX} $DATA_ARGS --source $SOURCE --member $MEMBER $HEMI $CMIP6_DATES $CMIP6_VAR_ARGS $CMIP6_SEARCH_NODE $CMIP6_EXCLUDE_NODES 2>&1 | tee logs/download.cmip_${HEMI}.${SOURCE}.${MEMBER}.log
       fi
     fi
 
-    PROCESSED_DATASET="pretrain.${CMIP_ID}.${DATA_FREQUENCY}.${HEMI}"
+
     pipeline_run preprocess_loader_init -v $PROCESSED_DATASET
 
     if [ $SIC_TYPE == "osisaf" ]; then
@@ -82,9 +87,6 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     elif [ $SIC_TYPE == "amsr2" ]; then
       pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} land_map "icenet.data.masks.nsidc:Masks"
     fi
-
-    LOADER_CONFIGURATION="loader.${PROCESSED_DATASET}.json"
-    DATASET_NAME=`basename $( pwd )`"_pretrain.${CMIP_ID}.${HEMI}"
 
     pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
