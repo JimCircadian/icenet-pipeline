@@ -19,6 +19,7 @@ SIC_TYPE="$2"
 SIC_TYPE=${SIC_TYPE,,}  # Make sure we're lowercase
 DOWNLOAD=${3:-0}
 DRY=${4:-0}
+PROCESSING=${PROCESSING:-1}
 
 CONFIG_SUFFIX="${DATA_FREQUENCY}.${HEMI}.json"
 SIC_TRUTH_DATA="data.$SIC_TYPE"
@@ -49,6 +50,8 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
       fi
     fi
 
+    # A hack to get the downloads done, if this is set in the environment don't process
+    [ $PROCESSING -eq 0 ] && continue
 
     pipeline_run preprocess_loader_init -v $PROCESSED_DATASET
 
