@@ -19,6 +19,8 @@ SIC_TYPE="$2"
 SIC_TYPE=${SIC_TYPE,,}  # Make sure we're lowercase
 DOWNLOAD=${3:-0}
 DRY=${4:-0}
+
+# This is particularly useful for CMIP transfer, so that we can seed data in one lump
 PROCESSING=${PROCESSING:-1}
 
 CONFIG_SUFFIX="${DATA_FREQUENCY}.${HEMI}.json"
@@ -121,6 +123,7 @@ unset PREFIX
 export PREFIX=$OLD_PREFIX
 
 if [ ! ${DRY:+1} ] || [ $DRY -eq 0 ]; then
+  [ $PROCESSING -eq 0 ] && exit 0
   source ENVS
 
   # 1. Copy dataset_config.monthly.cmip_osi_north.json, with referred loader configuration
