@@ -46,7 +46,9 @@ pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $OSISAF_DATA.$CONFIG_SUFF
 # or interpolation of time across huge spans
 if [ ! -f interp.osisaf.$CONFIG_SUFFIX ]; then
   pipeline_run preprocess_missing_time \
-    -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -ps "train" -sn "train,val,test" \
+    -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
     -c ./interp.osisaf.$CONFIG_SUFFIX \
     -n siconca -v $OSISAF_DATA.$CONFIG_SUFFIX $OSISAF_PROC
 
@@ -56,9 +58,10 @@ if [ ! -f interp.osisaf.$CONFIG_SUFFIX ]; then
 fi
 
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
-  -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+  -ps "train" -sn "train,val,test" \
+  -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+  -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
   -i "icenet.data.processors.osisaf:SICPreProcessor" \
-  -sh $LAG -st $FORECAST_LENGTH \
   interp.osisaf.$CONFIG_SUFFIX ${PROCESSED_DATASET}_osisaf
 
 HEMI_SHORT="nh"
@@ -70,25 +73,19 @@ pipeline_run icenet_generate_ref_osisaf -v data/masks.osisaf/ice_conc_${HEMI_SHO
 # The resulting configuration doesn't care about splits, so it won't carry forward
 
 if [ ! -f regrid.era5.$CONFIG_SUFFIX ]; then
-  FIRST_TRAIN_DATE=$( echo $TRAIN_START | awk -F'|' '{ print $1 }' )
-  FIRST_VAL_DATE=$( echo $VAL_START | awk -F'|' '{ print $1 }' )
-  FIRST_TEST_DATE=$( echo $TEST_START | awk -F'|' '{ print $1 }' )
-  REGRID_TRAIN_START=`date --date="$FIRST_TRAIN_DATE - $LAG $DATA_FREQUENCY" +%F`
-  REGRID_VAL_START=`date --date="$FIRST_VAL_DATE - $LAG $DATA_FREQUENCY" +%F`
-  REGRID_TEST_START=`date --date="$FIRST_TEST_DATE - $LAG $DATA_FREQUENCY" +%F`
-
   pipeline_run preprocess_regrid -v -c ./regrid.era5.$CONFIG_SUFFIX \
     -ps "train" -sn "train,val,test" \
-    -ss "${REGRID_TRAIN_START}${TRAIN_START:${#FIRST_TRAIN_DATE}},${REGRID_VAL_START}${VAL_START:${#FIRST_VAL_DATE}},${REGRID_TEST_START}${TEST_START:${#FIRST_TEST_DATE}}" \
-    -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+    -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
     $ERA5_DATA.$CONFIG_SUFFIX ref.osisaf.${HEMI}.nc $ERA5_PROC
   pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.$CONFIG_SUFFIX ref.osisaf.${HEMI}.nc
 fi
 
 pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
-  -ps "train" -sn "train,val,test" -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+  -ps "train" -sn "train,val,test" \
+  -ss "$TRAIN_START,$VAL_START,$TEST_START" -se "$TRAIN_END,$VAL_END,$TEST_END" \
+  -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
   -i "icenet.data.processors.cds:ERA5PreProcessor" \
-  -sh $LAG -st $FORECAST_LENGTH \
   regrid.era5.$CONFIG_SUFFIX ${PROCESSED_DATASET}_era5
 
 pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_osisaf.json processed.${PROCESSED_DATASET}_era5.json

@@ -74,7 +74,9 @@ fi
 
 if [ ! -f processed.${PROCESSED_DATASET}_osisaf.json ]; then
   pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
-    -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
+    -ps "train" -sn "train" \
+    -ss "$TRAIN_START" -se "$TRAIN_END" \
+    -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
     -i "icenet.data.processors.osisaf:SICPreProcessor" \
     -sh $LAG -st $FORECAST_LENGTH \
     regrid.osisaf.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_osisaf
@@ -87,17 +89,14 @@ if [ ! -f regrid.era5.${CONFIG_SUFFIX} ]; then
     -ss "$TRAIN_START" -se "$TRAIN_END" \
     -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
     $ERA5_DATA.$CONFIG_SUFFIX ref.amsr2.${HEMI}.nc $ERA5_PROC
-  #HEMI_SHORT="nh"
-  #[ $HEMI == "south" ] && HEMI_SHORT="sh"
-  #pipeline_run icenet_generate_ref_osisaf -v `data/osisaf/siconca/*/*${HEMI_SHORT}*.nc | tail -n 1`
-  #pipeline_run preprocess_rotate -n uas,vas -v regrid.era5.${CONFIG_SUFFIX} ref.amsr2.${HEMI}.nc
 fi
 
 if [ ! -f processed.${PROCESSED_DATASET}_era5.json ]; then
   pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
-    -ps "train" -sn "train" -ss "$TRAIN_START" -se "$TRAIN_END" \
-    -i "icenet.data.processors.cds:ERA5PreProcessor" \
+    -ps "train" -sn "train" \
+    -ss "$TRAIN_START" -se "$TRAIN_END" \
     -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
+    -i "icenet.data.processors.cds:ERA5PreProcessor" \
     regrid.era5.${CONFIG_SUFFIX} ${PROCESSED_DATASET}_era5
 fi
 
