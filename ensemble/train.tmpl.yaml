@@ -13,13 +13,13 @@ ensemble:
     mem:            128gb
     nodes:          1
     ntasks:         8
-    preload:        ""
     strategy:       default
     symlinks:
       - ../../../ENVS*
       - ../../../*.json
       - ../../../{configurations,network_datasets,processed,results}
-    transfer:       ""
+    transfer_dataset: ""
+    transfer_network: ""
 
   pre_process:
     - name:   execute

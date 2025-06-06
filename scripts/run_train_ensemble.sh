@@ -25,7 +25,7 @@ while getopts ":b:c:de:f:g:j:l:m:n:o:p:q:r:s:t:x:" opt; do
     f)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}filter_factor=$OPTARG ";;
     g)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}gpus=$OPTARG ";;
     j)  ENSEMBLE_JOBS=$OPTARG ;;
-    l)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}preload=$OPTARG ";;
+    l)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}transfer_dataset=$OPTARG ";;
     m)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}mem=$OPTARG ";;
     n)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}nodelist=$OPTARG ";;
     o)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}nodes=$OPTARG ";;
@@ -33,7 +33,7 @@ while getopts ":b:c:de:f:g:j:l:m:n:o:p:q:r:s:t:x:" opt; do
     r)  ENSEMBLE_RUNS=$OPTARG ;; # Ensemble member run seed values
     s)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}strategy=$OPTARG ";;
     t)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}length=$OPTARG ";;
-    x)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}transfer=$OPTARG ";;
+    x)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}transfer_network=$OPTARG ";;
   esac
 done
 

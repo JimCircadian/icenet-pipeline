@@ -30,8 +30,8 @@ source $PREP_SCRIPT
 conda activate $ICENET_CONDA
 
 PRELOAD=""
-FINAL_WEIGHTS="results/networks/{{ run.name }}/{{ run.name }}.network_{{ run.transfer }}.{{ run.seed }}.h5"
-CHECKPOINT_WEIGHTS="`ls results/networks/{{ run.name }}/checkpoint.{{ run.name }}.network_{{ run.preload }}.{{ run.seed }}.*.keras 2>/dev/null`"
+FINAL_WEIGHTS="results/networks/{{ run.transfer_network }}/{{ run.transfer_network }}.network_{{ run.transfer_dataset }}.{{ run.seed }}.h5"
+CHECKPOINT_WEIGHTS="`ls results/networks/{{ run.transfer_network }}/checkpoint.{{ run.transfer_network }}.network_{{ run.transfer_dataset }}.{{ run.seed }}.*.keras 2>/dev/null`"
 
 if [ -f $FINAL_WEIGHTS ]; then
     echo "Preloading from previously trained network $FINAL_WEIGHTS"
