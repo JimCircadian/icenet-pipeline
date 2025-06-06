@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ $# -lt 2 ]]; then
-    echo "Usage $0 DATASET NAME"
+    echo "Usage $0 DATASET NAME [ADDITIONAL_ARGS]"
     exit 1
 fi
 
@@ -32,8 +32,8 @@ while getopts ":b:c:de:f:g:j:l:m:n:o:p:q:r:s:t:x:" opt; do
     p)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}prep=$OPTARG ";;
     r)  ENSEMBLE_RUNS=$OPTARG ;; # Ensemble member run seed values
     s)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}strategy=$OPTARG ";;
-    t)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}ntasks=$OPTARG ";;
-    x)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}email=$OPTARG ";;
+    t)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}length=$OPTARG ";;
+    x)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}transfer=$OPTARG ";;
   esac
 done
 
@@ -46,8 +46,11 @@ echo "ARGS = $ENSEMBLE_SWITCH $ENSEMBLE_ARGS, Leftovers: $@"
 
 DATASET="$1"
 NAME="$2"
+shift && shift
+ADDITIONAL_ARGS="$@"
 
-LOADER=`basename $( cat dataset_config.${DATASET}.json | jq '.loader_config' | tr -d '"' )`
+echo "Additional arguments for training: $@"
+
 TRAIN_CONFIG=`mktemp -p . --suffix ".train"`
 
 ##
@@ -83,13 +86,13 @@ echo "Ensemble members: " "${joined%,}"
 
 sed -r \
     -e "s/NAME/${NAME}/g" \
-    -e "s/LOADER/${LOADER}/g" \
+    -e "s/ADDITIONAL_ARGS/${ADDITIONAL_ARGS}/g" \
     -e "s/DATASET/${DATASET}/g" \
     -e "s/MAXJOBS/${ENSEMBLE_JOBS}/g" \
     -e "/\bSEEDS$/s/.*/${ENSEMBLE_SEEDS}/g" \
  ensemble/train.tmpl.yaml >$TRAIN_CONFIG
 
-COMMAND="model_ensemble $TRAIN_CONFIG $ENSEMBLE_TARGET $ENSEMBLE_SWITCH $ENSEMBLE_ARGS"
+COMMAND="model_ensemble -s $TRAIN_CONFIG $ENSEMBLE_TARGET $ENSEMBLE_SWITCH $ENSEMBLE_ARGS"
 echo "Running $COMMAND"
 $COMMAND
 echo "Removing temporary configuration $TRAIN_CONFIG"

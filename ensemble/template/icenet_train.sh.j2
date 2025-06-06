@@ -3,10 +3,6 @@
 #SBATCH --output={{ run.dir }}/train.%j.%N.{{ run.seed }}.out
 #SBATCH --error={{ run.dir }}/train.%j.%N.{{ run.seed }}.err
 #SBATCH --chdir={{ run.dir }}
-{% if run.email != "someone@example.com" %}
-#SBATCH --mail-type=begin,end,fail,requeue
-#SBATCH --mail-user={{ run.email }}
-{% endif %}
 #SBATCH --time={{ run.length }}
 #SBATCH --job-name={{ run.id }}
 #SBATCH --nodes={{ run.nodes }}
@@ -21,15 +17,10 @@
 cd {{ run.dir }}
 
 {% for dest in run.symlinks %}
-    {%- if '*' in dest %}
-for FILE in $( ls {{ dest }} ); do
+for FILE in {{ dest }}; do
     ln -s $FILE;
 done
-    {% else %}
-ln -s {{ dest }}
-    {% endif -%}
 {% endfor %}
-
 
 . ENVS
 
@@ -39,10 +30,9 @@ source $PREP_SCRIPT
 conda activate $ICENET_CONDA
 
 PRELOAD=""
-FINAL_WEIGHTS="results/networks/{{ run.name }}/{{ run.name }}.network_{{ run.preload }}.{{ run.seed }}.h5"
+FINAL_WEIGHTS="results/networks/{{ run.name }}/{{ run.name }}.network_{{ run.transfer }}.{{ run.seed }}.h5"
 CHECKPOINT_WEIGHTS="`ls results/networks/{{ run.name }}/checkpoint.{{ run.name }}.network_{{ run.preload }}.{{ run.seed }}.*.keras 2>/dev/null`"
 
-# TODO: do we have keras / h5 weight multi-handling in place in library?
 if [ -f $FINAL_WEIGHTS ]; then
     echo "Preloading from previously trained network $FINAL_WEIGHTS"
     PRELOAD="-p $FINAL_WEIGHTS"
@@ -55,7 +45,8 @@ fi
 COMMAND="icenet_train_tensorflow -v \
     $TRAIN_STATIC_ARGS \
     -b {{ run.batch }} -e {{ run.epochs }} -n $FILTER_FACTOR -s {{ run.strategy }} \
-    $PRELOAD {{ run.dataset }} {{ run.name }} {{ run.seed }} "
+    {{ run.additional_args }} \
+    $PRELOAD {{ run.dataset }} {{ run.name }} {{ run.seed }}"
 
 echo "Running $COMMAND"
 eval $COMMAND

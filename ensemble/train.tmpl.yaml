@@ -1,27 +1,28 @@
 ---
 ensemble:
   vars:
+    additional_args: 'ADDITIONAL_ARGS'
     batch:          4
     cluster:        dummy
     dataset:        DATASET
     email:          someone@example.com
     epochs:         100
-    filter_factor:  1
     gpus:           1
     length:         "1-00:00:00"
     mem:            128gb
     nodes:          1
-    ntasks:         2
-    preload:        DATASET
+    ntasks:         8
+    preload:        ""
     strategy:       default
     symlinks:
       - ../../../data
       - ../../../ENVS*
-      - ../../../LOADER
-      - ../../../dataset_config.DATASET.json
+      - ../../../loader.*.json
+      - ../../../dataset_config.*.json
       - ../../../network_datasets
       - ../../../processed
       - ../../../results
+    transfer:       ""
 
   pre_process:
     - name:   execute
