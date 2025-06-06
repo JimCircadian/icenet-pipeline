@@ -6,6 +6,9 @@ source ENVS
 source scripts/pipeline_cmds.sh
 conda activate $ICENET_CONDA
 
+# We have to manually override the dates
+export ERA5_DATES=$OSISAF_DATES
+
 set -o pipefail
 set -eu
 
@@ -114,7 +117,7 @@ DATASET_NAME=`basename $( pwd )`"_pretrain.${HEMI}"
 pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
 if [ ! $DRY ]; then
-  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$LAG']' | tr -d '"'`}
+  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train[0]' | tr -d '"'`}
 else
   OFFSET=""
   if [ $DATA_FREQUENCY == "month" ]; then

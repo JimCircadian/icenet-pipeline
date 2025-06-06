@@ -100,14 +100,14 @@ DATASET_NAME=`basename $( pwd )`"_${HEMI}"
 pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
 # For when we don't have the preceding data, make sure there's an offset. These will be dropped in generation
-if [ ! $DRY ]; then
-  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train['$( expr $LAG + 1 )']' | tr -d '"'`}
+if [ $DRY == 0 ]; then
+  LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq -r '.sources[.sources|keys[0]].splits.train[0]'`}
 else
   OFFSET=""
   if [ $DATA_FREQUENCY == "month" ]; then
     OFFSET=" + 1 month - 1 day"
   fi
-  LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 1 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
+  LAG_DATE=`date --date="$( echo $TRAIN_START | awk -F'|' '{ print $1 }' ) + $( expr $LAG + 2 ) ${DATA_FREQUENCY}s $OFFSET" +%F`
 fi
 mkdir -p plots
 pipeline_run icenet_plot_input -p -v dataset_config.${DATASET_NAME}.json ${LAG_DATE} ./plots/osisaf_input.${HEMI}.${LAG_DATE}.png
