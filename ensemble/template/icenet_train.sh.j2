@@ -1,5 +1,5 @@
 #!/bin/bash -l
-{% if run.cluster != "test" %}
+{% if run.cluster != "dummy" %}
 #SBATCH --output={{ run.dir }}/train.%j.%N.{{ run.seed }}.out
 #SBATCH --error={{ run.dir }}/train.%j.%N.{{ run.seed }}.err
 #SBATCH --chdir={{ run.dir }}
