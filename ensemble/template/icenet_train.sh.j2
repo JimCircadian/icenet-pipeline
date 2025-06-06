@@ -42,11 +42,15 @@ elif [ ! -z "$CHECKPOINT_WEIGHTS" ]; then
     PRELOAD="-p $CHECKPOINT_FILE"
 fi
 
+{% if run.filter_factor|float > 0.0 %}
+FILTER_FACTOR={{ run.filter_factor }}
+{% endif %}
+
 COMMAND="icenet_train_tensorflow -v \
     $TRAIN_STATIC_ARGS \
     -b {{ run.batch }} -e {{ run.epochs }} -n $FILTER_FACTOR -s {{ run.strategy }} \
-    {{ run.additional_args }} \
-    $PRELOAD {{ run.dataset }} {{ run.name }} {{ run.seed }}"
+    $PRELOAD {{ run.dataset }} {{ run.name }} {{ run.seed }} \
+    {{ run.additional_args }}"
 
 echo "Running $COMMAND"
 eval $COMMAND

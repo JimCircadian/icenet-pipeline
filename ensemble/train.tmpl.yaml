@@ -7,6 +7,7 @@ ensemble:
     dataset:        DATASET
     email:          someone@example.com
     epochs:         100
+    filter_factor:  0
     gpus:           1
     length:         "1-00:00:00"
     mem:            128gb
@@ -15,13 +16,9 @@ ensemble:
     preload:        ""
     strategy:       default
     symlinks:
-      - ../../../data
       - ../../../ENVS*
-      - ../../../loader.*.json
-      - ../../../dataset_config.*.json
-      - ../../../network_datasets
-      - ../../../processed
-      - ../../../results
+      - ../../../*.json
+      - ../../../{configurations,network_datasets,processed,results}
     transfer:       ""
 
   pre_process:
