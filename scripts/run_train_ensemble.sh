@@ -92,7 +92,7 @@ sed -r \
     -e "/\bSEEDS$/s/.*/${ENSEMBLE_SEEDS}/g" \
  ensemble/train.tmpl.yaml >$TRAIN_CONFIG
 
-COMMAND="model_ensemble -s $TRAIN_CONFIG $ENSEMBLE_TARGET $ENSEMBLE_SWITCH $ENSEMBLE_ARGS"
+COMMAND="model_ensemble $TRAIN_CONFIG $ENSEMBLE_TARGET $ENSEMBLE_SWITCH $ENSEMBLE_ARGS"
 echo "Running $COMMAND"
 $COMMAND
 echo "Removing temporary configuration $TRAIN_CONFIG"
