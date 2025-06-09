@@ -26,7 +26,7 @@ SOURCE_CONFIG_NAME="dataset_config.${DATASET_NAME}.json"
 
 # download-toolbox integration
 # This updates our source
-pipeline_run download_amsr2 --config-path data.prediction.amsr2.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $DATA_DATES $AMSR2_VAR_ARGS
+pipeline_run download_osisaf --config-path data.prediction.osisaf.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $DATA_DATES $OSISAF_VAR_ARGS
 pipeline_run download_era5 --config-path data.prediction.era5.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $DATA_DATES $ERA5_VAR_ARGS
 
 FORECAST_DATASET="prediction.${FORECAST_NAME}.${HEMI}"
@@ -34,12 +34,14 @@ LOADER_CONFIGURATION="loader.${FORECAST_DATASET}.json"
 
 # Creates our LOADER_CONFIGURATION file
 pipeline_run preprocess_loader_init -v $FORECAST_DATASET
-pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.amsr2.${CONFIG_SUFFIX} land "icenet.data.masks.nsidc:Masks"
+pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} land "icenet.data.masks.osisaf:Masks"
+pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} polarhole "icenet.data.masks.osisaf:Masks"
+pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} active_grid_cell "icenet.data.masks.osisaf:Masks"
 
 pipeline_run preprocess_regrid -v \
   -c proc.prediction.era5.${CONFIG_SUFFIX} \
   -sn "prediction" -ss "$FORECAST_START" -se "$FORECAST_END" -sh `expr $LAG + 1` \
-  data.prediction.era5.${CONFIG_SUFFIX} ref.amsr2.${HEMI}.nc ${FORECAST_NAME}_era5
+  data.prediction.era5.${CONFIG_SUFFIX} ref.osisaf.${HEMI}.nc ${FORECAST_NAME}_era5
 pipeline_run preprocess_rotate -n uas,vas -v proc.prediction.era5.${CONFIG_SUFFIX} ref.osisaf.${HEMI}.nc
 
 pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
@@ -51,14 +53,14 @@ pipeline_run preprocess_dataset $PROC_ARGS_ERA5 -v \
 pipeline_run preprocess_dataset $PROC_ARGS_SIC -v \
   -r processed/${TRAIN_DATA_NAME}.${DATA_FREQUENCY}.${HEMI}_osisaf \
   -sn "prediction" -ss "$FORECAST_START" -se "$FORECAST_END" -sh `expr $LAG + 1` \
-  -i "icenet.data.processors.amsr:AMSR2PreProcessor" \
-  data.prediction.amsr2.${CONFIG_SUFFIX} ${FORECAST_NAME}_amsr2
+  -i "icenet.data.processors.osisaf:SICPreProcessor" \
+  data.prediction.osisaf.${CONFIG_SUFFIX} ${FORECAST_NAME}_osisaf
 
-pipeline_run preprocess_add_processed -v $FORECAST_DATASET processed.${FORECAST_NAME}_amsr2.json processed.${FORECAST_NAME}_era5.json
+pipeline_run preprocess_add_processed -v $FORECAST_DATASET processed.${FORECAST_NAME}_osisaf.json processed.${FORECAST_NAME}_era5.json
 
-pipeline_run preprocess_add_channel -v $FORECAST_DATASET data.prediction.amsr2.${CONFIG_SUFFIX} sin "icenet.data.meta:SinProcessor"
-pipeline_run preprocess_add_channel -v $FORECAST_DATASET data.prediction.amsr2.${CONFIG_SUFFIX} cos "icenet.data.meta:CosProcessor"
-pipeline_run preprocess_add_channel -v $FORECAST_DATASET data.prediction.amsr2.${CONFIG_SUFFIX} land_map "icenet.data.masks.nsidc:Masks"
+pipeline_run preprocess_add_channel -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} sin "icenet.data.meta:SinProcessor"
+pipeline_run preprocess_add_channel -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} cos "icenet.data.meta:CosProcessor"
+pipeline_run preprocess_add_channel -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} land_map "icenet.data.masks.osisaf:Masks"
 
 pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $FORECAST_DATASET
 
