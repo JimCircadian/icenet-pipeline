@@ -38,6 +38,12 @@ pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.osisaf.${C
 pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} polarhole "icenet.data.masks.osisaf:Masks"
 pipeline_run preprocess_add_mask -v $FORECAST_DATASET data.prediction.osisaf.${CONFIG_SUFFIX} active_grid_cell "icenet.data.masks.osisaf:Masks"
 
+if [ ! -f ref.osisaf.${HEMI}.nc ]; then
+  HEMI_SHORT="nh"
+  [ $HEMI == "south" ] && HEMI_SHORT="sh"
+  pipeline_run icenet_generate_ref_osisaf -v data/masks.osisaf/ice_conc_${HEMI_SHORT}_ease2-250_cdr-v2p0_200001021200.nc
+fi
+
 pipeline_run preprocess_regrid -v \
   -c proc.prediction.era5.${CONFIG_SUFFIX} \
   -sn "prediction" -ss "$FORECAST_START" -se "$FORECAST_END" -sh `expr $LAG + 1` \
