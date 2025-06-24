@@ -55,6 +55,11 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     # A hack to get the downloads done, if this is set in the environment don't process
     [ $PROCESSING -eq 0 ] && continue
 
+    # Overriding the experiments that don't present ssp245 data
+    if [ $SOURCE == "MRI-ESM2-0" ] && [ $MEMBER != "r1i1p1f1" ]; then
+      TRAIN_END="2014-12-31"
+    fi
+
     pipeline_run preprocess_loader_init -v $PROCESSED_DATASET
 
     if [ $SIC_TYPE == "osisaf" ]; then
@@ -96,7 +101,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
     if [ ! $DRY ]; then
-      LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq -r '.sources[.sources|keys[0]].splits.train[0]' | tr -d '"'`}
+      LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq -r '.sources[.sources|keys[0]].splits.train[0]'}
     else
       OFFSET=""
       if [ $DATA_FREQUENCY == "month" ]; then
