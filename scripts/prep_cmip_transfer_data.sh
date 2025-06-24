@@ -103,7 +103,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
     if [ ! $DRY ]; then
-      LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq -r '.sources[.sources|keys[0]].splits.train[0]'}
+      LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq -r '.sources[.sources|keys[0]].splits.train[0]'`}
     else
       OFFSET=""
       if [ $DATA_FREQUENCY == "month" ]; then
