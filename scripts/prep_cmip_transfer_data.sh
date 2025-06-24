@@ -42,7 +42,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
 
     [ -f $LOADER_CONFIGURATION ] && continue
     [ -f dataset_config.${DATASET_NAME}.json ] && continue
-    
+
     echo -e "\n=============================================\n"
 
     # download-toolbox integration
@@ -58,7 +58,7 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     [ $PROCESSING -eq 0 ] && continue
 
     # Overriding the experiments that don't present ssp245 data
-    if [ $SOURCE == "MRI-ESM2-0" ] && [ $MEMBER != "r1i1p1f1" ]; then
+    if [ "$SOURCE" == "MRI-ESM2-0" ] && [ "$MEMBER" != "r1i1p1f1" ]; then
       TRAIN_END="2014-12-31"
     fi
 
