@@ -41,6 +41,8 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     DATASET_NAME=`basename $( pwd )`"_pretrain.${CMIP_ID}.${HEMI}"
 
     [ -f $LOADER_CONFIGURATION ] && continue
+    [ -f dataset_config.${DATASET_NAME}.json ] && continue
+    
     echo -e "\n=============================================\n"
 
     # download-toolbox integration
