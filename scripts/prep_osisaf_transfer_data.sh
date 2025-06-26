@@ -116,7 +116,7 @@ DATASET_NAME=`basename $( pwd )`"_pretrain.${HEMI}"
 
 pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
 
-if [ ! $DRY ]; then
+if [ ! $DRY ] && [ ! -f $LOADER_CONFIGURATION ]; then
   LAG_DATE=${PLOT_DATE:-`cat ${LOADER_CONFIGURATION} | jq '.sources[.sources|keys[0]].splits.train[0]' | tr -d '"'`}
 else
   OFFSET=""
