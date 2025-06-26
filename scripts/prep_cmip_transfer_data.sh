@@ -40,7 +40,6 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
     LOADER_CONFIGURATION="loader.${PROCESSED_DATASET}.json"
     DATASET_NAME=`basename $( pwd )`"_pretrain.${CMIP_ID}.${HEMI}"
 
-    [ -f $LOADER_CONFIGURATION ] && continue
     [ -f dataset_config.${DATASET_NAME}.json ] && continue
 
     echo -e "\n=============================================\n"
@@ -62,42 +61,44 @@ for SOURCE in ${!CMIP6_SOURCES[@]}; do
       TRAIN_END="2014-12-31"
     fi
 
-    pipeline_run preprocess_loader_init -v $PROCESSED_DATASET
+    if [ ! -f $LOADER_CONFIGURATION ]; then
+      pipeline_run preprocess_loader_init -v $PROCESSED_DATASET
 
-    if [ $SIC_TYPE == "osisaf" ]; then
-      pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.osisaf:Masks"
-      pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX polarhole "icenet.data.masks.osisaf:Masks"
-      pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX active_grid_cell "icenet.data.masks.osisaf:Masks"
-    elif [ $SIC_TYPE == "amsr2" ]; then
-      pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.nsidc:Masks"
-    fi
+      if [ $SIC_TYPE == "osisaf" ]; then
+        pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.osisaf:Masks"
+        pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX polarhole "icenet.data.masks.osisaf:Masks"
+        pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX active_grid_cell "icenet.data.masks.osisaf:Masks"
+      elif [ $SIC_TYPE == "amsr2" ]; then
+        pipeline_run preprocess_add_mask -v $PROCESSED_DATASET $SIC_TRUTH_DATA.$CONFIG_SUFFIX land "icenet.data.masks.nsidc:Masks"
+      fi
 
-    if [ ! -f regrid.$CMIP_DATA.$CONFIG_SUFFIX ]; then
-      pipeline_run preprocess_regrid -v -c ./regrid.$CMIP_DATA.$CONFIG_SUFFIX \
-        -ps "train" -sn "train" \
-        -ss "$TRAIN_START" -se "$TRAIN_END" \
-        -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
-        $CMIP_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $CMIP_PROC
-    fi
+      if [ ! -f regrid.$CMIP_DATA.$CONFIG_SUFFIX ]; then
+        pipeline_run preprocess_regrid -v -c ./regrid.$CMIP_DATA.$CONFIG_SUFFIX \
+          -ps "train" -sn "train" \
+          -ss "$TRAIN_START" -se "$TRAIN_END" \
+          -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
+          $CMIP_DATA.$CONFIG_SUFFIX ref.${SIC_TYPE}.${HEMI}.nc $CMIP_PROC
+      fi
 
-    if [ ! -f processed.${PROCESSED_DATASET}_${CMIP_DATA}.json ]; then
-      pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \
-        -ps "train" -sn "train" \
-        -ss "$TRAIN_START" -se "$TRAIN_END" \
-        -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
-        -i "icenet.data.processors.cmip:CMIP6PreProcessor" \
-        regrid.$CMIP_DATA.$CONFIG_SUFFIX ${PROCESSED_DATASET}_${CMIP_DATA}
-    fi
+      if [ ! -f processed.${PROCESSED_DATASET}_${CMIP_DATA}.json ]; then
+        pipeline_run preprocess_dataset $PROC_ARGS_CMIP -v \
+          -ps "train" -sn "train" \
+          -ss "$TRAIN_START" -se "$TRAIN_END" \
+          -sh `expr $LAG + 1` -st $FORECAST_LENGTH \
+          -i "icenet.data.processors.cmip:CMIP6PreProcessor" \
+          regrid.$CMIP_DATA.$CONFIG_SUFFIX ${PROCESSED_DATASET}_${CMIP_DATA}
+      fi
 
-    pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_${CMIP_DATA}.json
+      pipeline_run preprocess_add_processed -v $PROCESSED_DATASET processed.${PROCESSED_DATASET}_${CMIP_DATA}.json
 
-    pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} sin "icenet.data.meta:SinProcessor"
-    pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} cos "icenet.data.meta:CosProcessor"
+      pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} sin "icenet.data.meta:SinProcessor"
+      pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} cos "icenet.data.meta:CosProcessor"
 
-    if [ $SIC_TYPE == "osisaf" ]; then
-      pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} land_map "icenet.data.masks.osisaf:Masks"
-    elif [ $SIC_TYPE == "amsr2" ]; then
-      pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} land_map "icenet.data.masks.nsidc:Masks"
+      if [ $SIC_TYPE == "osisaf" ]; then
+        pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} land_map "icenet.data.masks.osisaf:Masks"
+      elif [ $SIC_TYPE == "amsr2" ]; then
+        pipeline_run preprocess_add_channel -v $PROCESSED_DATASET regrid.${CMIP_DATA}.${CONFIG_SUFFIX} land_map "icenet.data.masks.nsidc:Masks"
+      fi
     fi
 
     pipeline_run icenet_dataset_create -v -c -p -ob $BATCH_SIZE -w $WORKERS -fl $FORECAST_LENGTH $LOADER_CONFIGURATION $DATASET_NAME
