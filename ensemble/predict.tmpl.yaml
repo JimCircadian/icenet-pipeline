@@ -5,16 +5,16 @@ ensemble:
     arg_filter_factor:  1
     arg_network:        NETWORK
     arg_testset:        true
-    symlinks:
-      - ../../../data
-      - ../../../ENVS*
-      - ../../../loader.LOADER.json
-      - ../../../dataset_config.DATASET.json
-      - ../../../network_datasets
-      - ../../../processed
-      - ../../../results
-    mem:          224gb
     cluster:      pvc
+    email:        someone@example.com
+    length:       00:30:00
+    mem:          224gb
+    nodes:        1
+    ntasks:       8
+    symlinks:
+      - ../../../ENVS*
+      - ../../../*.json
+      - ../../../{configurations,network_datasets,processed,results}
 
   pre_process:          []
   post_process:         []
@@ -23,39 +23,29 @@ ensemble:
     templatedir:  ../template
     templates:
     - icenet_predict.sh.j2
-    email:        someone@example.com
     job_file:     icenet_predict.sh
-    nodes:        1
-    ntasks:       8
-    length:       00:30:00
-    maxruns:      100
-    maxjobs:      10
+    maxruns:      MAXJOBS
+    maxjobs:      MAXJOBS
 
   batches:
     - name:       NAME
       basedir:    ./ensemble/NAME
-      pre_batch:  
-        - name:   execute
-          args: 
-              cmd:  /usr/bin/ln -s ../../data
+      pre_batch:
         - name:   execute
           args:
-              cmd:  /usr/bin/ln -s ../../processed
+              cmd:  ln -s ../../data
         - name:   execute
           args:
-              cmd:  /usr/bin/ln -s ../../processed_data
+              cmd:  ln -s ../../processed
         - name:   execute
           args:
-              cmd:  /usr/bin/ln -s ../../ref.osisaf.north.nc
-        - name:   execute
-          args:
-              cmd:  /usr/bin/ln -s ../../ref.osisaf.south.nc
+              cmd:  ln -s ../../data.DATASET.json
       pre_run:    []
       runs:
         - seed:   SEEDS
-      post_run:     []
+      post_run:   []
       post_batch:
         - name:   execute
           args:
-              cmd:  icenet_output -m --nan -r ../.. -o ../../results/predict NAME DATASET predict_dates.csv
+              cmd:  icenet_output -p -m --nan -r ../.. -o ../../results/predict NAME DATASET predict_dates.csv
 

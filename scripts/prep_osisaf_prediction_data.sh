@@ -13,8 +13,17 @@ FORECAST_START=${3:-"2025-01-01"}
 FORECAST_END=${4:-${FORECAST_START}}
 DRY=${5:-0}
 
-DATA_DATES=$( date --date="$FORECAST_START - `expr $LAG + 1` ${DATA_FREQUENCY}s" +%F )" ${FORECAST_END}"
-CONFIG_SUFFIX="${DATA_FREQUENCY}.${HEMI}.json"
+INPUT_START_DATE=$( date --date="${FORECAST_START} - `expr $LAG + 2` ${DATA_FREQUENCY}s" +%F )
+INPUT_END_DATE=$( date --date="${FORECAST_END} - 1 ${DATA_FREQUENCY}s" +%F)
+
+if [ $DATA_FREQUENCY == "month" ]; then
+  # FIXME: This is horrible, use a non-bash method
+  INPUT_END_DATE=$( date --date="${FORECAST_END} + 1 day" +%F )
+  INPUT_END_DATE=$( date --date="${INPUT_END_DATE} - 1 month" +%F )
+  INPUT_END_DATE=$( date --date="${INPUT_END_DATE} - 1 day" +%F )
+fi
+
+CONFIG_SUFFIX="${FORECAST_NAME}.${HEMI}.json"
 
 DATASET_NAME=`basename $( pwd )`"_${HEMI}"
 SOURCE_CONFIG_NAME="dataset_config.${DATASET_NAME}.json"
@@ -23,11 +32,13 @@ SOURCE_CONFIG_NAME="dataset_config.${DATASET_NAME}.json"
 # TODO: Usable as is for training, but for prediction we need to restrict this to relevant activities and dates
 #   ./run_prediction.sh fc.09_12.2024 amsr_6k_6m_120125.south south
 
+# Forecast dates are the FIRST date of SIC you expect, so we download and prepare from t-1 onwards
+
 
 # download-toolbox integration
 # This updates our source
-pipeline_run download_osisaf --config-path data.prediction.osisaf.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $DATA_DATES $OSISAF_VAR_ARGS
-pipeline_run download_era5 --config-path data.prediction.era5.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $DATA_DATES $ERA5_VAR_ARGS
+pipeline_run download_osisaf --config-path data.prediction.osisaf.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $INPUT_START_DATE $INPUT_END_DATE $OSISAF_VAR_ARGS
+pipeline_run download_era5 --config-path data.prediction.era5.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $INPUT_START_DATE $INPUT_END_DATE $ERA5_VAR_ARGS
 
 FORECAST_DATASET="prediction.${FORECAST_NAME}.${HEMI}"
 LOADER_CONFIGURATION="loader.${FORECAST_DATASET}.json"
@@ -46,7 +57,7 @@ fi
 
 pipeline_run preprocess_regrid -v \
   -c proc.prediction.era5.${CONFIG_SUFFIX} \
-  -sn "prediction" -ss "$FORECAST_START" -se "$FORECAST_END" -sh `expr $LAG + 1` \
+  -sn "prediction" -ss $INPUT_START_DATE -se $INPUT_END_DATE -sh `expr $LAG + 1` \
   data.prediction.era5.${CONFIG_SUFFIX} ref.osisaf.${HEMI}.nc ${FORECAST_NAME}_era5
 pipeline_run preprocess_rotate -n uas,vas -v proc.prediction.era5.${CONFIG_SUFFIX} ref.osisaf.${HEMI}.nc
 

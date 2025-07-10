@@ -16,12 +16,13 @@ ENSEMBLE_ARGS=""
 TRAIN_IDENT=""
 ENSEMBLE_SEEDS_DEFAULT=42,46,45
 
-while getopts ":b:df:i:lm:p:r:x" opt; do
+while getopts ":b:df:i:j:lm:p:r:x" opt; do
   case "$opt" in
     b)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}arg_batch=$OPTARG ";;
     d)  ENSEMBLE_TARGET="dummy";;
     f)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}arg_filter_factor=$OPTARG ";;
     i)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}arg_ident=$OPTARG ";;
+    j)  ENSEMBLE_JOBS=$OPTARG ;;
     l)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}arg_testset=false ";;
     m)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}mem=$OPTARG ";;
     p)  ENSEMBLE_ARGS="${ENSEMBLE_ARGS}arg_prep=$OPTARG ";;
@@ -90,6 +91,7 @@ sed -r \
     -e "s/DATASET/${DATASET}/g" \
     -e "s/LOADER/${LOADER}/g" \
     -e "s/NAME/${NAME}/g" \
+    -e "s/MAXJOBS/${ENSEMBLE_JOBS}/g" \
     -e "/\bSEEDS$/s/.*/${ENSEMBLE_SEEDS}/g" \
  ensemble/predict.tmpl.yaml >$PREDICT_CONFIG
 

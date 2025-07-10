@@ -1,4 +1,5 @@
 #!/bin/bash -l
+{% if run.cluster != "dummy" %}
 #SBATCH --output={{ run.dir }}/predict.%j.%N.{{ run.seed }}.out
 #SBATCH --error={{ run.dir }}/predict.%j.%N.{{ run.seed }}.err
 #SBATCH --chdir={{ run.dir }}
@@ -15,17 +16,14 @@
 #SBATCH --cpus-per-task={{ run.ntasks }}
 #SBATCH --mem={{ run.mem }}
 {% if run.nodelist %}#SBATCH --nodelist={{ run.nodelist }}{% endif %}
+{% endif %}
 
 cd {{ run.dir }}
 
 {% for dest in run.symlinks %}
-    {%- if '*' in dest %}
-for FILE in $( ls {{ dest }} ); do
+for FILE in {{ dest }}; do
     ln -s $FILE;
 done
-    {% else %}
-ln -s {{ dest }}
-    {% endif -%}
 {% endfor %}
 
 . ENVS
