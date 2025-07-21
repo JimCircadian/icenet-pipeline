@@ -37,9 +37,6 @@ ensemble:
         - name:   execute
           args:
               cmd:  ln -s ../../processed
-        - name:   execute
-          args:
-              cmd:  ln -s ../../data.DATASET.json
       pre_run:    []
       runs:
         - seed:   SEEDS
@@ -47,5 +44,5 @@ ensemble:
       post_batch:
         - name:   execute
           args:
-              cmd:  icenet_output -p -m --nan -r ../.. -o ../../results/predict NAME DATASET predict_dates.csv
+              cmd:  icenet_output --no-agcm -m --nan -r ../.. -o results/predict NAME dataset_config.DATASET.json predict_dates.csv
 
