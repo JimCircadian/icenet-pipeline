@@ -34,5 +34,5 @@ fi
 LOADER_NAME="loader.${PREDICTION_NAME}.${HEMI}.json"
 jq -r '.sources[].splits["prediction"][]' $LOADER_NAME | sort | uniq >${PREDICTION_NAME}.${HEMI}.csv
 
-echo ./scripts/run_predict_ensemble.sh $EXTRA_ARGS -i $DATASET -f $FILTER_FACTOR -p $PREP_SCRIPT \
+./scripts/run_predict_ensemble.sh $EXTRA_ARGS -i $DATASET -f $FILTER_FACTOR -p $PREP_SCRIPT \
     ${MODEL} ${PREDICTION_NAME}.${HEMI} ${PREDICTION_NAME}.${HEMI} ${PREDICTION_NAME}.${HEMI}.csv

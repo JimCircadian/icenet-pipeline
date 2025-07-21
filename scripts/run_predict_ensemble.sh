@@ -14,6 +14,7 @@ ENSEMBLE_TARGET="slurm"
 ENSEMBLE_SWITCH=""
 ENSEMBLE_ARGS=""
 TRAIN_IDENT=""
+ENSEMBLE_JOBS=1
 ENSEMBLE_SEEDS_DEFAULT=42,46,45
 
 while getopts ":b:df:i:j:lm:p:r:x" opt; do
