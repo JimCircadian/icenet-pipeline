@@ -38,7 +38,7 @@ SOURCE_CONFIG_NAME="dataset_config.${DATASET_NAME}.json"
 # download-toolbox integration
 # This updates our source
 pipeline_run download_osisaf --config-path data.prediction.osisaf.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $INPUT_START_DATE $INPUT_END_DATE $OSISAF_VAR_ARGS
-pipeline_run download_era5 --config-path data.prediction.era5.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $INPUT_START_DATE $INPUT_END_DATE $ERA5_VAR_ARGS
+pipeline_run download_cds -i era5 --config-path data.prediction.era5.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $INPUT_START_DATE $INPUT_END_DATE $ERA5_VAR_ARGS
 
 FORECAST_DATASET="prediction.${FORECAST_NAME}.${HEMI}"
 LOADER_CONFIGURATION="loader.${FORECAST_DATASET}.json"

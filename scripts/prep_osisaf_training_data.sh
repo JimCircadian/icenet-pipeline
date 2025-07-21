@@ -27,7 +27,7 @@ ERA5_PROC="proc.era5"
 if [ $DOWNLOAD -eq 1 ]; then
   # We use --config-path to localise the generation of config to the pipeline rather than the dataset
   pipeline_run download_osisaf --config-path ${OSISAF_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $OSISAF_DATES $OSISAF_VAR_ARGS
-  pipeline_run download_era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
+  pipeline_run download_cds -i era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
 fi 2>&1 | tee logs/download.osisaf_training.log
 
 ##

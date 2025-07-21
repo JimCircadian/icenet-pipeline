@@ -46,7 +46,7 @@ DATASET_NAME=`basename $( pwd )`"_pretrain.${HEMI}"
 # This updates our source
 if [ $DOWNLOAD -eq 1 ]; then
   pipeline_run download_osisaf --config-path ${OSISAF_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $OSISAF_DATES $OSISAF_VAR_ARGS
-  pipeline_run download_era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
+  pipeline_run download_cds -i era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
 fi
 
 if [ ! -f $LOADER_CONFIGURATION ]; then

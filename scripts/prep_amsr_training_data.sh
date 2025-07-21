@@ -27,7 +27,7 @@ ERA5_PROC="proc.era5"
 if [ $DOWNLOAD -eq 1 ]; then
   # We use --config-path to localise the generation of config to the pipeline rather than the dataset
   pipeline_run download_amsr2 --config-path ${AMSR2_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $AMSR2_DATES $AMSR2_VAR_ARGS
-  pipeline_run download_era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
+  pipeline_run download_cds -i era5 --config-path ${ERA5_DATA}.${CONFIG_SUFFIX} $DATA_ARGS $HEMI $ERA5_DATES $ERA5_VAR_ARGS
 fi 2>&1 | tee logs/download.amsr_training.log
 
 [ ! -f ref.amsr2.${HEMI}.nc ] && pipeline_run ln -s $( realpath $( ls data/amsr2_6250/siconca/*/*${HEMI:0:1}6250-*-v5.4.nc | head -n 1 ) ) ref.amsr2.${HEMI}.nc
